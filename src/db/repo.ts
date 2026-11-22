@@ -4,6 +4,7 @@
 
 import { eq } from 'drizzle-orm';
 
+import { CATEGORIES } from '@/domain/categories';
 import { toISO } from '@/domain/cycle';
 
 import { db } from './client';
@@ -90,8 +91,14 @@ export function resetDemo(today = new Date()) {
   });
 }
 
-/** Primeiro uso: grava o mês de exemplo se o banco estiver vazio. */
+/** Primeiro uso: grava o mês de exemplo se o banco estiver vazio. Depois, só completa as
+ * categorias novas do catálogo (atualização do app). */
 export function seedIfEmpty() {
   const done = db.select().from(settings).where(eq(settings.key, 'seeded')).get();
-  if (!done) resetDemo();
+  if (!done) {
+    resetDemo();
+    return;
+  }
+  const rows = CATEGORIES.map(({ key, name, kind, family, icon }) => ({ key, name, kind, family, icon }));
+  db.insert(categories).values(rows).onConflictDoNothing().run();
 }

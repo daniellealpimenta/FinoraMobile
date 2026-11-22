@@ -41,7 +41,11 @@ export type Summary = {
   byCategory: [string, number][];
 };
 
-const isExpense = (t: TxLike) => t.amountCents < 0 && CATEGORY[t.categoryKey ?? '']?.kind !== 'INCOME';
+// Saída que é gasto: fica de fora o que é receita ou movimentação entre contas (fatura, cofrinho)
+const isExpense = (t: TxLike) => {
+  const kind = CATEGORY[t.categoryKey ?? '']?.kind;
+  return t.amountCents < 0 && kind !== 'INCOME' && kind !== 'TRANSFER';
+};
 
 export function summarize(args: {
   cycle: Cycle;

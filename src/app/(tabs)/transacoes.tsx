@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { CategoryGlyph } from '@/components/category-icon';
+import { ConnectionNote } from '@/components/connection-note';
 import { Pila } from '@/components/pila';
 import { TxRow } from '@/components/tx-row';
 import { Card, IconButton, Row, Screen, T } from '@/components/ui';
@@ -17,7 +18,7 @@ import { FONT, useTheme } from '@/theme/tokens';
 
 export default function Transacoes() {
   const { c } = useTheme();
-  const { txs, summary: s, cycle, today } = useFinance();
+  const { txs, summary: s, cycle, today, mode, status, refresh } = useFinance();
   const { hidden } = usePrefs();
   const { openEdit } = useUI();
   const [filter, setFilter] = useState<string>('all');
@@ -35,7 +36,7 @@ export default function Transacoes() {
   }, [list]);
 
   return (
-    <Screen>
+    <Screen onRefresh={mode === 'remote' ? refresh : undefined} refreshing={status.loading && status.updatedAt !== null}>
       <Row>
         <T v="page" style={{ flex: 1 }}>
           Transações
@@ -47,6 +48,8 @@ export default function Transacoes() {
       <T v="label" style={{ marginTop: -10 }}>
         {cycleName(cycle)} · {cycleRange(cycle)}
       </T>
+
+      <ConnectionNote />
 
       <View style={[st.search, { backgroundColor: c.surface, borderColor: c.border }]}>
         <Search size={18} color={c.muted} />

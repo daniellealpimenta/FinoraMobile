@@ -8,7 +8,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { longToday } from '@/domain/cycle';
-import { alpha, FONT, RADIUS, useTheme } from '@/theme/tokens';
+import { FONT, RADIUS, useTheme } from '@/theme/tokens';
 
 import { Pila } from './pila';
 import { T } from './ui';
@@ -54,7 +54,6 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
 
   return (
     <Animated.View entering={FadeIn} exiting={FadeOut.duration(250)} style={[StyleSheet.absoluteFill, s.wrap, { backgroundColor: c.bg }]}>
-      <View style={[s.glow, { backgroundColor: alpha(c.accent, 0.12) }]} />
       <View style={{ alignItems: 'center' }}>
         <T style={{ fontFamily: FONT.display, fontSize: 76, letterSpacing: -3 }}>{hh}</T>
         <T muted style={{ fontFamily: FONT.semi }}>
@@ -84,6 +83,5 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
 
 const s = StyleSheet.create({
   wrap: { zIndex: 100, alignItems: 'center', justifyContent: 'space-between', paddingTop: 110, paddingBottom: 70, paddingHorizontal: 24 },
-  glow: { position: 'absolute', width: 420, height: 420, borderRadius: 210, top: 120 },
   face: { width: 76, height: 76, borderRadius: RADIUS.card + 4, alignItems: 'center', justifyContent: 'center' },
 });

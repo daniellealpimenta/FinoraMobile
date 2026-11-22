@@ -13,7 +13,7 @@ import { T } from '@/components/ui';
 import type { Mood } from '@/domain/pila';
 import { FONT, useTheme } from '@/theme/tokens';
 
-import { getPrefs } from './prefs';
+import { getPrefs, usePrefs } from './prefs';
 
 type UI = {
   openAdd: () => void;
@@ -31,7 +31,9 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [add, setAdd] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [potId, setPotId] = useState<number | null>(null);
-  const [locked, setLocked] = useState(() => getPrefs().lockOnOpen);
+  // Bloqueia ao abrir (se a opção estiver ligada), mas nunca na tela de entrada
+  const [locked, setLocked] = useState(() => getPrefs().lockOnOpen && getPrefs().mode !== null);
+  const { mode } = usePrefs();
   const [msg, setMsg] = useState<{ id: number; text: string; mood: Mood } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -74,7 +76,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
       <AddSheet visible={add} onClose={() => setAdd(false)} toast={toast} />
       <EditSheet id={editId} onClose={() => setEditId(null)} toast={toast} />
       <SaveSheet potId={potId} onClose={() => setPotId(null)} toast={toast} />
-      {locked && <LockScreen onUnlock={() => setLocked(false)} />}
+      {locked && mode !== null && <LockScreen onUnlock={() => setLocked(false)} />}
     </Ctx>
   );
 }

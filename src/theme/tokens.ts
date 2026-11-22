@@ -31,6 +31,7 @@ const light = {
     shop: '#4a7300',
     fin: '#4a5868',
     income: '#00745b',
+    transfer: '#4b5563',
   } as Record<Family, string>,
 };
 
@@ -64,6 +65,7 @@ const dark: Palette = {
     shop: '#b5cf6b',
     fin: '#9aa7b4',
     income: '#4fcba8',
+    transfer: '#8c99a5',
   },
 };
 

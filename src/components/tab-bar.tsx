@@ -12,7 +12,7 @@ import { FONT, useTheme } from '@/theme/tokens';
 import { T } from './ui';
 
 const TABS: Record<string, { label: string; icon: LucideIcon; tone: 'accent' | 'home' | 'care' | 'muted' }> = {
-  index: { label: 'Início', icon: House, tone: 'accent' },
+  inicio: { label: 'Início', icon: House, tone: 'accent' },
   transacoes: { label: 'Transações', icon: List, tone: 'home' },
   cofrinhos: { label: 'Cofrinhos', icon: PiggyBank, tone: 'care' },
   mais: { label: 'Mais', icon: Ellipsis, tone: 'muted' },

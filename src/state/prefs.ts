@@ -4,9 +4,20 @@ import { useSyncExternalStore } from 'react';
 import { Appearance } from 'react-native';
 
 export type ThemePref = 'system' | 'light' | 'dark';
-type Prefs = { hidden: boolean; lockOnOpen: boolean; theme: ThemePref };
+/** demo = mês de exemplo no celular; remote = Finora do computador pela Tailscale */
+export type Mode = 'demo' | 'remote';
+type Prefs = {
+  hidden: boolean;
+  lockOnOpen: boolean;
+  theme: ThemePref;
+  mode: Mode | null;
+  // Finora conectado (o token fica no expo-secure-store, não aqui)
+  serverUrl: string | null;
+  deviceId: number | null;
+  email: string | null;
+};
 
-const DEFAULTS: Prefs = { hidden: false, lockOnOpen: true, theme: 'system' };
+const DEFAULTS: Prefs = { hidden: false, lockOnOpen: true, theme: 'system', mode: null, serverUrl: null, deviceId: null, email: null };
 
 function load(): Prefs {
   try {
@@ -26,13 +37,17 @@ function applyTheme(t: ThemePref) {
 applyTheme(state.theme);
 
 export function setPref<K extends keyof Prefs>(key: K, value: Prefs[K]) {
-  state = { ...state, [key]: value };
+  setPrefs({ [key]: value } as Partial<Prefs>);
+}
+
+export function setPrefs(patch: Partial<Prefs>) {
+  state = { ...state, ...patch };
   try {
     Storage.setItemSync('prefs', JSON.stringify(state));
   } catch {
     // sem armazenamento: vale só nesta sessão
   }
-  if (key === 'theme') applyTheme(value as ThemePref);
+  if (patch.theme) applyTheme(patch.theme);
   listeners.forEach((l) => l());
 }
 

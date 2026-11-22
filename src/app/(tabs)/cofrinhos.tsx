@@ -7,24 +7,22 @@ import { Guilloche } from '@/components/guilloche';
 import { HeroNumber } from '@/components/hero-number';
 import { Pila } from '@/components/pila';
 import { Card, Pill, Row, Screen, T } from '@/components/ui';
-import type { SavingsPot } from '@/db/schema';
-import type { Family } from '@/domain/categories';
 import { money } from '@/lib/format';
-import { useFinance } from '@/state/finance';
+import { type PotView, useFinance } from '@/state/finance';
 import { usePrefs } from '@/state/prefs';
 import { useUI } from '@/state/ui';
 import { FONT, useTheme } from '@/theme/tokens';
 
 export default function Cofrinhos() {
   const { c } = useTheme();
-  const { pots, summary: s } = useFinance();
+  const { pots, summary: s, mode, status, refresh, actions } = useFinance();
   const { hidden } = usePrefs();
   const { openSave } = useUI();
   const total = pots.reduce((a, p) => a + p.balanceCents, 0);
   const reserve = pots.find((p) => p.goalCents);
 
   return (
-    <Screen>
+    <Screen onRefresh={mode === 'remote' ? refresh : undefined} refreshing={status.loading && status.updatedAt !== null}>
       <T v="page">Cofrinhos</T>
       <T v="label" style={{ marginTop: -10 }}>
         Ficam fora do &quot;Livre agora&quot;
@@ -48,7 +46,7 @@ export default function Cofrinhos() {
             key={p.id}
             onPress={() => openSave(p.id)}
             accessibilityRole="button"
-            accessibilityLabel={`${p.name}, ${money(p.balanceCents, { hidden })}. Toque para guardar.`}
+            accessibilityLabel={`${p.name}, ${money(p.balanceCents, { hidden })}. ${actions.saveToPot ? 'Toque para guardar.' : 'Toque para ajustar a meta.'}`}
             style={({ pressed }) => [st.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: c.border }, pressed && { opacity: 0.6 }]}>
             <Ring pot={p} />
             <View style={{ flex: 1, minWidth: 0 }}>
@@ -69,7 +67,7 @@ export default function Cofrinhos() {
             <T style={{ fontSize: 14, lineHeight: 20 }}>
               {reserve.balanceCents >= reserve.goalCents
                 ? `${reserve.name} bateu a meta!`
-                : `Faltam ${money(reserve.goalCents - reserve.balanceCents, { hidden })} para a ${reserve.name.toLowerCase()}. Toque num cofrinho para guardar.`}
+                : `Faltam ${money(reserve.goalCents - reserve.balanceCents, { hidden })} para a ${reserve.name.toLowerCase()}. ${actions.saveToPot ? 'Toque num cofrinho para guardar.' : 'Toque num cofrinho para ajustar a meta.'}`}
             </T>
           </View>
         </Row>
@@ -78,9 +76,9 @@ export default function Cofrinhos() {
   );
 }
 
-function Ring({ pot }: { pot: SavingsPot }) {
+function Ring({ pot }: { pot: PotView }) {
   const { c } = useTheme();
-  const tone = c.cat[pot.color as Family] ?? c.accent;
+  const tone = c.cat[pot.color] ?? c.accent;
   const r = 18;
   const C = 2 * Math.PI * r;
   const p = pot.goalCents ? Math.min(pot.balanceCents / pot.goalCents, 1) : 0;

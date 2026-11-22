@@ -39,6 +39,15 @@
         {
           "faceIDPermission": "O Finora usa o Face ID para proteger os seus números."
         }
+      ],
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O Finora usa a câmera só para ler o QR que pareia o celular com o seu computador.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "experiments": {

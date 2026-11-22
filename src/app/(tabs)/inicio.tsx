@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useCategoryColor } from '@/components/category-icon';
+import { ConnectionNote } from '@/components/connection-note';
 import { Guilloche } from '@/components/guilloche';
 import { HeroNumber, useCountUp } from '@/components/hero-number';
 import { Pila } from '@/components/pila';
@@ -26,7 +27,7 @@ function greeting(d: Date) {
 
 export default function Home() {
   const { c } = useTheme();
-  const { summary: s, cycle, txs, pots, budgets, profileName, today } = useFinance();
+  const { summary: s, cycle, txs, pots, budgets, profileName, today, mode, status, refresh, actions } = useFinance();
   const { hidden } = usePrefs();
   const { openSave, openEdit } = useUI();
   const [per, setPer] = useState<'dia' | 'ciclo'>('dia');
@@ -37,7 +38,7 @@ export default function Home() {
   const progress = s.day / s.length;
 
   return (
-    <Screen>
+    <Screen onRefresh={mode === 'remote' ? refresh : undefined} refreshing={status.loading && status.updatedAt !== null}>
       <Row>
         <View style={[st.avatar, { backgroundColor: c.surface2 }]}>
           <T style={{ fontFamily: FONT.displayBold, color: c.accent }}>{(profileName || 'F').slice(0, 1)}</T>
@@ -53,6 +54,8 @@ export default function Home() {
           <Pila size={34} />
         </IconButton>
       </Row>
+
+      <ConnectionNote />
 
       <Card style={{ paddingVertical: 10, alignItems: 'center' }}>
         <T v="title">{cycleName(cycle)}</T>
@@ -82,7 +85,7 @@ export default function Home() {
       </Card>
 
       <Row gap={8}>
-        <Tile color={TILE.gold} label="Guardar" sub={reserve?.goalCents ? `${Math.round((reserve.balanceCents / reserve.goalCents) * 100)}% da meta` : 'cofrinhos'} onPress={() => reserve && openSave(reserve.id)}>
+        <Tile color={TILE.gold} label={actions.saveToPot ? 'Guardar' : 'Metas'} sub={reserve?.goalCents ? `${Math.round((reserve.balanceCents / reserve.goalCents) * 100)}% da meta` : 'cofrinhos'} onPress={() => reserve && openSave(reserve.id)}>
           <PiggyBank size={22} color={TILE.ink} />
         </Tile>
         <Tile color={TILE.violet} label="Limites" sub={over ? `${over} estourou` : 'tudo ok'} onPress={() => router.push('/orcamentos')}>

@@ -1,6 +1,6 @@
 // Peças básicas no padrão do Finora web (MASTER.md, "Componentes").
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, type TextStyle, View, type ViewStyle } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, type TextStyle, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FONT, RADIUS, useTheme } from '@/theme/tokens';
@@ -33,10 +33,14 @@ export function T({
   numberOfLines?: number;
 }) {
   const { c } = useTheme();
+  // Fonte maior que a da variante sem altura de linha própria: a linha acompanha a fonte
+  // (senão o lineHeight de 22 do corpo corta números e títulos grandes)
+  const flat = StyleSheet.flatten(style) ?? {};
+  const fit = flat.fontSize && !flat.lineHeight ? { lineHeight: Math.round(flat.fontSize * 1.25) } : null;
   return (
     <Text
       numberOfLines={numberOfLines}
-      style={[VARIANT[v], { color: color ?? (muted || v === 'label' ? c.muted : c.fg), fontVariant: ['tabular-nums'] }, style]}>
+      style={[VARIANT[v], { color: color ?? (muted || v === 'label' ? c.muted : c.fg), fontVariant: ['tabular-nums'] }, style, fit]}>
       {children}
     </Text>
   );
@@ -132,13 +136,25 @@ export function Divider() {
   return <View style={{ height: StyleSheet.hairlineWidth * 2, backgroundColor: c.border }} />;
 }
 
-/** Tela com rolagem, já respeitando o entalhe e a barra de abas */
-export function Screen({ children, tabs = true }: { children: ReactNode; tabs?: boolean }) {
+/** Tela com rolagem, já respeitando o entalhe e a barra de abas. Com onRefresh, puxar
+ * para baixo atualiza (modo conectado). */
+export function Screen({
+  children,
+  tabs = true,
+  refreshing = false,
+  onRefresh,
+}: {
+  children: ReactNode;
+  tabs?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+}) {
   const { c } = useTheme();
   const insets = useSafeAreaInsets();
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: c.bg }}
+      refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.accent} colors={[c.accent]} /> : undefined}
       contentContainerStyle={{ paddingTop: insets.top + 8, paddingHorizontal: 16, paddingBottom: (tabs ? 110 : 24) + insets.bottom, gap: 12 }}
       showsVerticalScrollIndicator={false}>
       {children}

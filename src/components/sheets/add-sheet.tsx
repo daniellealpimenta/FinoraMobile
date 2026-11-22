@@ -3,10 +3,9 @@
 import * as Haptics from 'expo-haptics';
 import { Delete, List, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { addEntry } from '@/db/repo';
-import { category, EXPENSE_KEYS, INCOME_KEYS } from '@/domain/categories';
+import { category, INCOME_KEYS, QUICK_EXPENSE_KEYS } from '@/domain/categories';
 import { budgetStatus } from '@/domain/forecast';
 import { keypadCents, money } from '@/lib/format';
 import { useFinance } from '@/state/finance';
@@ -23,13 +22,14 @@ const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'del'];
 
 export function AddSheet({ visible, onClose, toast }: { visible: boolean; onClose: () => void; toast: Toast }) {
   const { c, tint } = useTheme();
-  const { summary, budgets } = useFinance();
+  const { summary, budgets, actions, mode } = useFinance();
   const { hidden } = usePrefs();
   const [digits, setDigits] = useState('');
   const [kind, setKind] = useState<'out' | 'in'>('out');
   const [cat, setCat] = useState('delivery');
   const [pay, setPay] = useState<'card' | 'pix'>('card');
   const [desc, setDesc] = useState('');
+  const [busy, setBusy] = useState(false);
 
   // Zera o valor e a descrição ao fechar (o tipo e a categoria ficam para o próximo)
   const close = () => {
@@ -40,24 +40,41 @@ export function AddSheet({ visible, onClose, toast }: { visible: boolean; onClos
 
   const cents = keypadCents(digits);
   const after = Math.floor((summary.spendableCents + (kind === 'out' ? -cents : cents)) / summary.daysLeft);
-  const cats = kind === 'out' ? EXPENSE_KEYS : INCOME_KEYS;
+  const cats = kind === 'out' ? QUICK_EXPENSE_KEYS : INCOME_KEYS;
 
   const press = (k: string) => {
     Haptics.selectionAsync();
     setDigits((d) => (k === 'del' ? d.slice(0, -1) : d.length >= 8 ? d : (d + k).replace(/^0+/, '')));
   };
 
-  const save = () => {
-    if (!cents) return;
+  const save = async () => {
+    if (!cents || busy) return;
     const before = summary.perDayCents;
     const budget = budgets.find((b) => b.categoryKey === cat);
-    addEntry({ kind, cents, categoryKey: cat, pay, description: desc || category(cat).name });
+    setBusy(true);
+    try {
+      await actions.addEntry({ kind, cents, categoryKey: cat, pay, description: desc || category(cat).name });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : String(e), 'worried');
+      return;
+    } finally {
+      setBusy(false);
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     close();
     const perDay = (v: number) => money(v, { cents: false, hidden });
-    if (kind === 'in') {
+    const overNow = budget && budgetStatus(budget.spentCents + cents, budget.limitCents) === 'over' && budgetStatus(budget.spentCents, budget.limitCents) !== 'over';
+    if (mode === 'remote') {
+      // O computador recalcula a previsão; o celular não chuta o "por dia" novo
+      toast(
+        overNow
+          ? `Anotado, e ${category(cat).name} passou do limite.`
+          : 'Anotado no seu Finora. Quando o banco confirmar, ele troca por este lançamento.',
+        overNow ? 'worried' : 'happy',
+      );
+    } else if (kind === 'in') {
       toast(`Entrou ${money(cents, { hidden })}! Agora dá ${perDay(after)}/dia.`, 'celebrate');
-    } else if (budget && budgetStatus(budget.spentCents + cents, budget.limitCents) === 'over' && budgetStatus(budget.spentCents, budget.limitCents) !== 'over') {
+    } else if (overNow) {
       toast(`${category(cat).name} passou do limite. Agora dá ${perDay(after)}/dia.`, 'worried');
     } else if (budget && budgetStatus(budget.spentCents + cents, budget.limitCents) === 'near') {
       toast(`Anotado! Agora dá ${perDay(after)}/dia, e ${category(cat).name} está perto do limite.`, 'neutral');
@@ -94,7 +111,11 @@ export function AddSheet({ visible, onClose, toast }: { visible: boolean; onClos
         <T style={{ fontFamily: FONT.display, fontSize: 48, letterSpacing: -1.4, color: cents ? c.fg : c.muted }}>{money(cents).replace('R$ ', '')}</T>
       </Row>
       <T v="label" style={{ textAlign: 'center', minHeight: 18 }}>
-        {cents ? `Depois disso, dá para gastar ${money(after, { cents: false, hidden })}/dia` : 'Digite o valor'}
+        {!cents
+          ? 'Digite o valor'
+          : mode === 'remote'
+            ? 'O seu Finora recalcula a previsão ao salvar'
+            : `Depois disso, dá para gastar ${money(after, { cents: false, hidden })}/dia`}
       </T>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -18, marginTop: 12 }} contentContainerStyle={{ paddingHorizontal: 18, gap: 8 }}>
@@ -155,12 +176,16 @@ export function AddSheet({ visible, onClose, toast }: { visible: boolean; onClos
 
       <Pressable
         onPress={save}
-        disabled={!cents}
+        disabled={!cents || busy}
         accessibilityRole="button"
         style={({ pressed }) => [s.cta, { backgroundColor: c.accent, opacity: !cents ? 0.4 : pressed ? 0.85 : 1 }]}>
-        <T v="strong" color={c.accentFg}>
-          {cents ? `Salvar ${money(kind === 'out' ? -cents : cents)}` : 'Salvar'}
-        </T>
+        {busy ? (
+          <ActivityIndicator color={c.accentFg} />
+        ) : (
+          <T v="strong" color={c.accentFg}>
+            {cents ? `Salvar ${money(kind === 'out' ? -cents : cents)}` : 'Salvar'}
+          </T>
+        )}
       </Pressable>
     </Sheet>
   );

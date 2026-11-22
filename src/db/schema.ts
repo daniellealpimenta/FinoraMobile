@@ -15,7 +15,7 @@ export const accounts = sqliteTable('accounts', {
 export const categories = sqliteTable('categories', {
   key: text('key').primaryKey(),
   name: text('name').notNull(),
-  kind: text('kind', { enum: ['EXPENSE', 'INCOME'] }).notNull(),
+  kind: text('kind', { enum: ['EXPENSE', 'INCOME', 'TRANSFER'] }).notNull(),
   family: text('family').notNull(),
   icon: text('icon').notNull(),
 });
