@@ -101,7 +101,7 @@ estar na mesma rede para o Expo Go baixar o app.
 
 ## 🔗 Conectar ao Finora do computador
 
-Precisa do Finora **v0.2.2 ou mais novo** no computador
+Precisa do Finora **v0.2.3 ou mais novo** no computador
 ([baixar](https://github.com/daniellealpimenta/Finora/releases/latest)).
 
 1. Instale a [Tailscale](https://tailscale.com/download) no computador e no celular, com a
