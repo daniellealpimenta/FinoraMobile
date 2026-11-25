@@ -1,6 +1,6 @@
 // Estado de interface que atravessa as abas: as três folhas, o aviso do Pila e o bloqueio.
-import { createContext, type ReactNode, use, useCallback, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { createContext, type ReactNode, use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, StyleSheet, View } from 'react-native';
 import Animated, { FadeOutDown, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -36,6 +36,16 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const { mode } = usePrefs();
   const [msg, setMsg] = useState<{ id: number; text: string; mood: Mood } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // "Pedir Face ID ao abrir" vale também ao voltar para o app, não só ao abrir do zero.
+  // Só em "background": o aviso do Face ID e a central de controle deixam o app "inactive"
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => {
+      const p = getPrefs();
+      if (s === 'background' && p.lockOnOpen && p.mode !== null) setLocked(true);
+    });
+    return () => sub.remove();
+  }, []);
 
   const toast = useCallback((text: string, mood: Mood = 'happy') => {
     clearTimeout(timer.current);
